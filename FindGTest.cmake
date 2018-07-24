@@ -23,6 +23,8 @@ if(GTEST_INCLUDE_DIR AND (NOT GTEST_LIBRARY OR GTEST_FORCE_SOURCES))
 
     if(NOT TARGET gtest)
 
+        find_package(Threads REQUIRED)
+
         message("Trying to find GTest sources and register extra targets")
         find_file(GTEST_BASE_SOURCE gtest-all.cc
                   HINTS /usr/src/gtest
@@ -51,6 +53,8 @@ if(GTEST_INCLUDE_DIR AND (NOT GTEST_LIBRARY OR GTEST_FORCE_SOURCES))
                                         ${gtest_base_dir}/..
                                         ${gtest_base_dir}/../include
         )
+
+        target_link_libraries(gtest PRIVATE ${CMAKE_THREAD_LIBS_INIT})
 
         target_include_directories(gtest-main
                                     PRIVATE
