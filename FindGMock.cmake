@@ -16,7 +16,7 @@ find_library(GMOCK_MAIN_LIBRARY gmock_main)
 
 set(GMOCK_INCLUDE_DIRS ${GMOCK_INCLUDE_DIR})
 
-option(GMOCK_FORCE_SOURCES "Prefer googlemock sources over existing libraries" ON)
+option(GMOCK_FORCE_SOURCES "Prefer googlemock sources over existing libraries" OFF)
 
 if(GMOCK_INCLUDE_DIR AND (NOT GMOCK_LIBRARY OR GMOCK_FORCE_SOURCES))
 
