@@ -41,6 +41,9 @@
 # 2017-06-02, Lars Bilke
 # - Merged with modified version from github.com/ufz/ogs
 #
+# 2019-07-15, Michał Walenciak
+# - using modern CMake functions
+# - dropping all functions but SETUP_TARGET_FOR_COVERAGE_LCOV
 #
 # USAGE:
 #
@@ -49,20 +52,15 @@
 # 2. Add the following line to your CMakeLists.txt:
 #      include(CodeCoverage)
 #
-# 3. Append necessary compiler flags:
-#      APPEND_COVERAGE_COMPILER_FLAGS()
-#
-# 3.a (OPTIONAL) Set appropriate optimization flags, e.g. -O0, -O1 or -Og
-#
-# 4. If you need to exclude additional directories from the report, specify them
+# 3. If you need to exclude additional directories from the report, specify them
 #    using the COVERAGE_LCOV_EXCLUDES variable before calling SETUP_TARGET_FOR_COVERAGE_LCOV.
 #    Example:
 #      set(COVERAGE_LCOV_EXCLUDES 'dir1/*' 'dir2/*')
 #
-# 5. Use the functions described below to create a custom make target which
+# 4. Use the functions described below to create a custom make target which
 #    runs your test executable and produces a code coverage report.
 #
-# 6. Build a Debug build:
+# 5. Build a Debug build:
 #      cmake -DCMAKE_BUILD_TYPE=Debug ..
 #      make
 #      make my_coverage_target
@@ -163,122 +161,3 @@ function(SETUP_TARGET_FOR_COVERAGE_LCOV)
     )
 
 endfunction() # SETUP_TARGET_FOR_COVERAGE_LCOV
-
-# Defines a target for running and collection code coverage information
-# Builds dependencies, runs the given executable and outputs reports.
-# NOTE! The executable should always have a ZERO as exit code otherwise
-# the coverage generation will not complete.
-#
-# SETUP_TARGET_FOR_COVERAGE_GCOVR_XML(
-#     NAME ctest_coverage                    # New target name
-#     EXECUTABLE ctest -j ${PROCESSOR_COUNT} # Executable in PROJECT_BINARY_DIR
-#     DEPENDENCIES executable_target         # Dependencies to build first
-# )
-function(SETUP_TARGET_FOR_COVERAGE_GCOVR_XML)
-
-    set(options NONE)
-    set(oneValueArgs NAME)
-    set(multiValueArgs EXECUTABLE EXECUTABLE_ARGS DEPENDENCIES)
-    cmake_parse_arguments(Coverage "${options}" "${oneValueArgs}" "${multiValueArgs}" ${ARGN})
-
-    if(NOT Python_FOUND)
-        message(FATAL_ERROR "python not found! Aborting...")
-    endif()
-
-    if(NOT GCOVR_PATH)
-        message(FATAL_ERROR "gcovr not found! Aborting...")
-    endif() # NOT GCOVR_PATH
-
-    # Combine excludes to several -e arguments
-    set(GCOVR_EXCLUDES "")
-    foreach(EXCLUDE ${COVERAGE_GCOVR_EXCLUDES})
-        string(REPLACE "*" "\\*" EXCLUDE_REPLACED ${EXCLUDE})
-        list(APPEND GCOVR_EXCLUDES "-e")
-        list(APPEND GCOVR_EXCLUDES "${EXCLUDE_REPLACED}")
-    endforeach()
-
-    add_custom_target(${Coverage_NAME}
-        # Run tests
-        ${Coverage_EXECUTABLE} ${Coverage_EXECUTABLE_ARGS}
-
-        # Running gcovr
-        COMMAND ${GCOVR_PATH} --xml
-            -r ${PROJECT_SOURCE_DIR} ${GCOVR_EXCLUDES}
-            --object-directory=${PROJECT_BINARY_DIR}
-            -o ${Coverage_NAME}.xml
-        WORKING_DIRECTORY ${PROJECT_BINARY_DIR}
-        DEPENDS ${Coverage_DEPENDENCIES}
-        COMMENT "Running gcovr to produce Cobertura code coverage report."
-    )
-
-    # Show info where to find the report
-    add_custom_command(TARGET ${Coverage_NAME} POST_BUILD
-        COMMAND ;
-        COMMENT "Cobertura code coverage report saved in ${Coverage_NAME}.xml."
-    )
-
-endfunction() # SETUP_TARGET_FOR_COVERAGE_GCOVR_XML
-
-# Defines a target for running and collection code coverage information
-# Builds dependencies, runs the given executable and outputs reports.
-# NOTE! The executable should always have a ZERO as exit code otherwise
-# the coverage generation will not complete.
-#
-# SETUP_TARGET_FOR_COVERAGE_GCOVR_HTML(
-#     NAME ctest_coverage                    # New target name
-#     EXECUTABLE ctest -j ${PROCESSOR_COUNT} # Executable in PROJECT_BINARY_DIR
-#     DEPENDENCIES executable_target         # Dependencies to build first
-# )
-function(SETUP_TARGET_FOR_COVERAGE_GCOVR_HTML)
-
-    set(options NONE)
-    set(oneValueArgs NAME)
-    set(multiValueArgs EXECUTABLE EXECUTABLE_ARGS DEPENDENCIES)
-    cmake_parse_arguments(Coverage "${options}" "${oneValueArgs}" "${multiValueArgs}" ${ARGN})
-
-    if(NOT Python_FOUND)
-        message(FATAL_ERROR "python not found! Aborting...")
-    endif()
-
-    if(NOT GCOVR_PATH)
-        message(FATAL_ERROR "gcovr not found! Aborting...")
-    endif() # NOT GCOVR_PATH
-
-    # Combine excludes to several -e arguments
-    set(GCOVR_EXCLUDES "")
-    foreach(EXCLUDE ${COVERAGE_GCOVR_EXCLUDES})
-        string(REPLACE "*" "\\*" EXCLUDE_REPLACED ${EXCLUDE})
-        list(APPEND GCOVR_EXCLUDES "-e")
-        list(APPEND GCOVR_EXCLUDES "${EXCLUDE_REPLACED}")
-    endforeach()
-
-    add_custom_target(${Coverage_NAME}
-        # Run tests
-        ${Coverage_EXECUTABLE} ${Coverage_EXECUTABLE_ARGS}
-
-        # Create folder
-        COMMAND ${CMAKE_COMMAND} -E make_directory ${PROJECT_BINARY_DIR}/${Coverage_NAME}
-
-        # Running gcovr
-        COMMAND ${Python_EXECUTABLE} ${GCOVR_PATH} --html --html-details
-            -r ${PROJECT_SOURCE_DIR} ${GCOVR_EXCLUDES}
-            --object-directory=${PROJECT_BINARY_DIR}
-            -o ${Coverage_NAME}/index.html
-        WORKING_DIRECTORY ${PROJECT_BINARY_DIR}
-        DEPENDS ${Coverage_DEPENDENCIES}
-        COMMENT "Running gcovr to produce HTML code coverage report."
-    )
-
-    # Show info where to find the report
-    add_custom_command(TARGET ${Coverage_NAME} POST_BUILD
-        COMMAND ;
-        COMMENT "Open ./${Coverage_NAME}/index.html in your browser to view the coverage report."
-    )
-
-endfunction() # SETUP_TARGET_FOR_COVERAGE_GCOVR_HTML
-
-function(APPEND_COVERAGE_COMPILER_FLAGS)
-    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${COVERAGE_COMPILER_FLAGS}" PARENT_SCOPE)
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${COVERAGE_COMPILER_FLAGS}" PARENT_SCOPE)
-    message(STATUS "Appending code coverage compiler flags: ${COVERAGE_COMPILER_FLAGS}")
-endfunction() # APPEND_COVERAGE_COMPILER_FLAGS
