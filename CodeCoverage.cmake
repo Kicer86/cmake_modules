@@ -116,6 +116,7 @@ function(SETUP_TARGET_FOR_COVERAGE_LCOV)
         message(FATAL_ERROR "genhtml not found! Aborting...")
     endif() # NOT GENHTML_PATH
 
+    # make sure target is being built with proper flags
     target_compile_options(${Coverage_EXECUTABLE} PRIVATE -g --coverage -fprofile-arcs -ftest-coverage)
 
     if(CMAKE_C_COMPILER_ID STREQUAL "GNU")
