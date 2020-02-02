@@ -27,10 +27,10 @@ if(GTEST_INCLUDE_DIR AND (NOT GTEST_LIBRARY OR GTEST_FORCE_SOURCES))
 
         message("Trying to find GTest sources and register extra targets")
         find_file(GTEST_BASE_SOURCE gtest-all.cc
-                  HINTS /usr/src/gtest
-                        /usr/src/gtest/src
-                        ${GTEST_DIR}
+                  HINTS ${GTEST_DIR}
                         ${GTEST_DIR}/src
+                        /usr/src/gtest
+                        /usr/src/gtest/src
         )
 
         find_file(GTEST_MAIN_SOURCE gtest_main.cc
